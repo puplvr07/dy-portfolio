@@ -3,28 +3,46 @@ let cameraStream = null;
 let handDetectionActive = false;
 let canvas = null;
 let canvasCtx = null;
+let camera = null;
+let hands = null;
 
 // Load MediaPipe Hands
-async function loadMediaPipe() {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4.1633559343/camera_utils.js';
-    document.head.appendChild(script);
-    
-    const script2 = document.createElement('script');
-    script2.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.4.1633559343/drawing_utils.js';
-    document.head.appendChild(script2);
-    
-    const script3 = document.createElement('script');
-    script3.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1633559343/hands.js';
-    document.head.appendChild(script3);
+function loadMediaPipe() {
+    return Promise.all([
+        new Promise(resolve => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        }),
+        new Promise(resolve => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.4/drawing_utils.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        }),
+        new Promise(resolve => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        })
+    ]);
 }
 
 // Initialize hand detection
-function initializeHandDetection() {
-    loadMediaPipe();
-    
-    setTimeout(() => {
+async function initializeHandDetection() {
+    try {
+        await loadMediaPipe();
+        
         const video = document.getElementById('camera-feed');
+        
+        // Wait for video to be ready
+        if (video.videoWidth === 0) {
+            setTimeout(initializeHandDetection, 100);
+            return;
+        }
+        
         if (!canvas) {
             canvas = document.createElement('canvas');
             canvas.id = 'hand-canvas';
@@ -44,9 +62,9 @@ function initializeHandDetection() {
         canvas.height = video.videoHeight;
         canvasCtx = canvas.getContext('2d');
         
-        const hands = new window.Hands({
+        hands = new window.Hands({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1633559343/${file}`;
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
             }
         });
         
@@ -59,9 +77,11 @@ function initializeHandDetection() {
         
         hands.onResults(onHandResults);
         
-        const camera = new window.Camera(video, {
+        camera = new window.Camera(video, {
             onFrame: async () => {
-                await hands.send({image: video});
+                if (hands && handDetectionActive) {
+                    await hands.send({image: video});
+                }
             },
             width: video.videoWidth,
             height: video.videoHeight
@@ -69,11 +89,15 @@ function initializeHandDetection() {
         
         camera.start();
         handDetectionActive = true;
-    }, 1000);
+    } catch (error) {
+        console.error('Error initializing hand detection:', error);
+    }
 }
 
 // Handle hand detection results
 function onHandResults(results) {
+    if (!canvasCtx) return;
+    
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -98,8 +122,8 @@ function drawHand(landmarks) {
         [0, 5], [5, 9], [9, 13], [13, 17], [17, 0]
     ];
     
-    canvasCtx.fillStyle = '#64c8ff';
-    canvasCtx.strokeStyle = '#ff64c8';
+    canvasCtx.fillStyle = '#b0b0b0';
+    canvasCtx.strokeStyle = '#808080';
     canvasCtx.lineWidth = 2;
     
     // Draw connections
@@ -156,11 +180,11 @@ function displayImageBasedOnDistance(distance, width, height) {
     // Create or update image if it doesn't exist
     if (!imageContainer.querySelector('img')) {
         const img = document.createElement('img');
-        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="40" fill="%2364c8ff"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23ff64c8"/%3E%3C/svg%3E';
+        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="40" fill="%23888888"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23a0a0a0"/%3E%3C/svg%3E';
         img.style.cssText = `
             width: ${scaledSize}px;
             height: ${scaledSize}px;
-            filter: drop-shadow(0 0 10px rgba(100, 200, 255, 0.6));
+            filter: drop-shadow(0 0 10px rgba(180, 180, 180, 0.6));
             transition: width 0.1s, height 0.1s;
         `;
         imageContainer.appendChild(img);
@@ -174,7 +198,7 @@ function displayImageBasedOnDistance(distance, width, height) {
 // Request camera access
 async function requestCameraAccess() {
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } });
         console.log('Camera access granted');
         const feedContainer = document.getElementById('camera-feed-container');
         feedContainer.style.display = 'block';
@@ -183,7 +207,9 @@ async function requestCameraAccess() {
         
         // Start hand detection after camera loads
         video.onloadedmetadata = () => {
-            initializeHandDetection();
+            setTimeout(() => {
+                initializeHandDetection();
+            }, 500);
         };
     } catch (error) {
         if (error.name === 'NotAllowedError') {
@@ -196,7 +222,7 @@ async function requestCameraAccess() {
     }
 }
 
-// Capture photo from camera
+// Capture photo from camera (without the hand canvas overlay)
 function capturePhoto() {
     const video = document.getElementById('camera-feed');
     const captureCanvas = document.createElement('canvas');
@@ -208,14 +234,15 @@ function capturePhoto() {
     // Convert canvas to image and download
     captureCanvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `photo_${Date.now()}.jpg`;
-        a.click();
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `photo_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         URL.revokeObjectURL(url);
-    });
-    
-    alert('Photo captured and downloaded!');
+        alert('Photo captured and downloaded!');
+    }, 'image/jpeg', 0.95);
 }
 
 // Close camera
@@ -227,6 +254,16 @@ function closeCameraModal() {
     if (canvas) {
         canvas.remove();
         canvas = null;
+    }
+    
+    const imageContainer = document.getElementById('finger-image-container');
+    if (imageContainer) {
+        imageContainer.remove();
+    }
+    
+    if (camera) {
+        camera.stop();
+        camera = null;
     }
     
     if (cameraStream) {
