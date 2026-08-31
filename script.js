@@ -5,6 +5,21 @@ let canvas = null;
 let canvasCtx = null;
 let camera = null;
 let hands = null;
+let certImage = null;
+
+// Preload cert1 image
+function loadCertImage() {
+    return new Promise((resolve) => {
+        certImage = new Image();
+        certImage.crossOrigin = 'anonymous';
+        certImage.src = 'assets/cert1.jpg';
+        certImage.onload = resolve;
+        certImage.onerror = () => {
+            console.warn('Could not load cert1.jpg, will use fallback');
+            resolve();
+        };
+    });
+}
 
 // Load MediaPipe Hands
 function loadMediaPipe() {
@@ -34,6 +49,7 @@ function loadMediaPipe() {
 async function initializeHandDetection() {
     try {
         await loadMediaPipe();
+        await loadCertImage();
         
         const video = document.getElementById('camera-feed');
         
@@ -102,13 +118,54 @@ function onHandResults(results) {
     
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         for (let hand of results.multiHandLandmarks) {
+            // Draw hand skeleton
             drawHand(hand);
             
-            // Calculate finger distances and display image
-            const fingerDistance = calculateFingerDistance(hand);
-            displayImageBasedOnDistance(fingerDistance, canvas.width, canvas.height);
+            // Draw cert image through finger shape
+            drawImageThroughFingerShape(hand);
         }
     }
+}
+
+// Draw cert image clipped to finger shape
+function drawImageThroughFingerShape(landmarks) {
+    if (!certImage || !certImage.src) return;
+    
+    // Get fingertip positions (4, 8, 12, 16, 20)
+    const fingertips = [
+        { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height },   // thumb
+        { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },   // index
+        { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height }, // middle
+        { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height }, // ring
+        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }  // pinky
+    ];
+    
+    // Create clipping path from fingertips
+    canvasCtx.save();
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(fingertips[0].x, fingertips[0].y);
+    for (let i = 1; i < fingertips.length; i++) {
+        canvasCtx.lineTo(fingertips[i].x, fingertips[i].y);
+    }
+    canvasCtx.closePath();
+    canvasCtx.clip();
+    
+    // Draw cert image within the clipped region
+    const scale = Math.max(canvas.width, canvas.height) / 300;
+    canvasCtx.drawImage(
+        certImage,
+        canvas.width / 2 - (certImage.width * scale) / 2,
+        canvas.height / 2 - (certImage.height * scale) / 2,
+        certImage.width * scale,
+        certImage.height * scale
+    );
+    
+    // Draw the shape outline
+    canvasCtx.strokeStyle = '#c0c0c0';
+    canvasCtx.lineWidth = 2;
+    canvasCtx.stroke();
+    
+    canvasCtx.restore();
 }
 
 // Draw hand skeleton
@@ -142,56 +199,6 @@ function drawHand(landmarks) {
         canvasCtx.beginPath();
         canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, 2 * Math.PI);
         canvasCtx.fill();
-    }
-}
-
-// Calculate distance between thumb and index finger
-function calculateFingerDistance(landmarks) {
-    const thumbTip = landmarks[4];
-    const indexTip = landmarks[8];
-    
-    const dx = (thumbTip.x - indexTip.x) * canvas.width;
-    const dy = (thumbTip.y - indexTip.y) * canvas.height;
-    
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Display image based on finger distance
-function displayImageBasedOnDistance(distance, width, height) {
-    let imageContainer = document.getElementById('finger-image-container');
-    
-    if (!imageContainer) {
-        imageContainer = document.createElement('div');
-        imageContainer.id = 'finger-image-container';
-        imageContainer.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            pointer-events: none;
-        `;
-        document.getElementById('camera-feed-container').appendChild(imageContainer);
-    }
-    
-    // Scale image based on distance (50-200px range)
-    const scaledSize = Math.max(50, Math.min(200, distance / 2));
-    
-    // Create or update image if it doesn't exist
-    if (!imageContainer.querySelector('img')) {
-        const img = document.createElement('img');
-        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="40" fill="%23888888"/%3E%3Ccircle cx="50" cy="50" r="30" fill="%23a0a0a0"/%3E%3C/svg%3E';
-        img.style.cssText = `
-            width: ${scaledSize}px;
-            height: ${scaledSize}px;
-            filter: drop-shadow(0 0 10px rgba(180, 180, 180, 0.6));
-            transition: width 0.1s, height 0.1s;
-        `;
-        imageContainer.appendChild(img);
-    } else {
-        const img = imageContainer.querySelector('img');
-        img.style.width = scaledSize + 'px';
-        img.style.height = scaledSize + 'px';
     }
 }
 
@@ -254,11 +261,6 @@ function closeCameraModal() {
     if (canvas) {
         canvas.remove();
         canvas = null;
-    }
-    
-    const imageContainer = document.getElementById('finger-image-container');
-    if (imageContainer) {
-        imageContainer.remove();
     }
     
     if (camera) {

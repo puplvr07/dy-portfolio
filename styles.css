@@ -283,6 +283,9 @@ video {
     display: flex;
     flex-direction: column;
     height: 100%;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .certification img {
