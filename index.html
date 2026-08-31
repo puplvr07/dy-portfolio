@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DY Website</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Sean Dy</h1>
+            <ul>
+                <li><a href="#about">About Me</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#experiences">Experiences</a></li>
+                <li><a href="#certifications">Certifications</a></li>
+                <li><a href="#links">Links</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- About Me Section -->
+        <section id="about">
+            <h2>About Me</h2>
+            <p>Welcome to my portfolio. I'm Sean, a dedicated professional passionate about creating innovative solutions and delivering quality work. I bring a combination of technical expertise and problem-solving skills to every project I undertake.</p>
+            
+            <div class="camera-section">
+                <h3>Camera</h3>
+                <button id="camera-button">Access Camera</button>
+                <div id="camera-feed-container" style="display: none;">
+                    <video id="camera-feed" autoplay></video>
+                    <button onclick="capturePhoto()">Capture Photo</button>
+                    <button onclick="closeCameraModal()">Close</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects">
+            <h2>Projects</h2>
+            <div class="projects-container">
+                <article class="project">
+                    <h3>Project Name</h3>
+                    <p>Project description goes here.</p>
+                </article>
+                <article class="project">
+                    <h3>Project Name</h3>
+                    <p>Project description goes here.</p>
+                </article>
+                <article class="project">
+                    <h3>Project Name</h3>
+                    <p>Project description goes here.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Experiences Section -->
+        <section id="experiences">
+            <h2>Experiences & Past Roles</h2>
+            <div class="experiences-container">
+                <article class="experience">
+                    <h3>Job Title</h3>
+                    <p class="company">Company Name</p>
+                    <p class="date">Start Date - End Date</p>
+                    <p>Description of your role and responsibilities.</p>
+                </article>
+                <article class="experience">
+                    <h3>Job Title</h3>
+                    <p class="company">Company Name</p>
+                    <p class="date">Start Date - End Date</p>
+                    <p>Description of your role and responsibilities.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Certifications Section -->
+        <section id="certifications">
+            <h2>Certifications</h2>
+            <ul class="certifications-list">
+                <li>Certification Name - Issuing Organization</li>
+                <li>Certification Name - Issuing Organization</li>
+                <li>Certification Name - Issuing Organization</li>
+            </ul>
+        </section>
+
+        <!-- Links Section -->
+        <section id="links">
+            <h2>Links</h2>
+            <ul class="links-list">
+                <li><a href="#">LinkedIn</a></li>
+                <li><a href="#">GitHub</a></li>
+                <li><a href="#">Portfolio Website</a></li>
+                <li><a href="#">Email</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Sean. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
