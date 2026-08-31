@@ -24,22 +24,43 @@ function loadCertImage() {
 // Load MediaPipe Hands
 function loadMediaPipe() {
     return Promise.all([
-        new Promise(resolve => {
+        new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.js';
-            script.onload = resolve;
+            script.onload = () => {
+                console.log('camera_utils loaded');
+                resolve();
+            };
+            script.onerror = () => {
+                console.error('Failed to load camera_utils');
+                reject(new Error('Failed to load camera_utils'));
+            };
             document.head.appendChild(script);
         }),
-        new Promise(resolve => {
+        new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.4/drawing_utils.js';
-            script.onload = resolve;
+            script.onload = () => {
+                console.log('drawing_utils loaded');
+                resolve();
+            };
+            script.onerror = () => {
+                console.error('Failed to load drawing_utils');
+                reject(new Error('Failed to load drawing_utils'));
+            };
             document.head.appendChild(script);
         }),
-        new Promise(resolve => {
+        new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js';
-            script.onload = resolve;
+            script.onload = () => {
+                console.log('hands.js loaded');
+                resolve();
+            };
+            script.onerror = () => {
+                console.error('Failed to load hands.js');
+                reject(new Error('Failed to load hands.js - check browser console for CORS/CSP errors'));
+            };
             document.head.appendChild(script);
         })
     ]);
@@ -52,10 +73,19 @@ async function initializeHandDetection() {
         await loadCertImage();
         
         const video = document.getElementById('camera-feed');
+        const feedContainer = document.getElementById('camera-feed-container');
         
-        // Wait for video to be ready
-        if (video.videoWidth === 0) {
-            setTimeout(initializeHandDetection, 100);
+        // Ensure container is visible
+        if (feedContainer.style.display === 'none') {
+            feedContainer.style.display = 'block';
+        }
+        
+        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        
+        // Wait for video to have proper dimensions
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.log('Video dimensions not ready, retrying...');
+            setTimeout(initializeHandDetection, 200);
             return;
         }
         
@@ -70,17 +100,21 @@ async function initializeHandDetection() {
                 height: 100%;
                 border-radius: 10px;
             `;
-            document.getElementById('camera-feed-container').style.position = 'relative';
-            document.getElementById('camera-feed-container').appendChild(canvas);
+            feedContainer.style.position = 'relative';
+            feedContainer.appendChild(canvas);
+            console.log('Canvas created');
         }
         
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvasCtx = canvas.getContext('2d');
+        console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
         
         hands = new window.Hands({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+                const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+                console.log('Loading MediaPipe resource:', url);
+                return url;
             }
         });
         
@@ -92,11 +126,16 @@ async function initializeHandDetection() {
         });
         
         hands.onResults(onHandResults);
+        console.log('Hands model initialized');
         
         camera = new window.Camera(video, {
             onFrame: async () => {
                 if (hands && handDetectionActive) {
-                    await hands.send({image: video});
+                    try {
+                        await hands.send({image: video});
+                    } catch (err) {
+                        console.error('Error in hand detection frame:', err);
+                    }
                 }
             },
             width: video.videoWidth,
@@ -105,8 +144,10 @@ async function initializeHandDetection() {
         
         camera.start();
         handDetectionActive = true;
+        console.log('Hand tracking started');
     } catch (error) {
         console.error('Error initializing hand detection:', error);
+        alert('Error initializing hand tracking. Check browser console for details.');
     }
 }
 
@@ -212,11 +253,22 @@ async function requestCameraAccess() {
         const video = document.getElementById('camera-feed');
         video.srcObject = cameraStream;
         
-        // Start hand detection after camera loads
+        // Explicitly play the video
+        video.play().then(() => {
+            console.log('Video playing');
+        }).catch(err => {
+            console.error('Error playing video:', err);
+        });
+        
+        // Start hand detection after video is ready and has dimensions
         video.onloadedmetadata = () => {
-            setTimeout(() => {
-                initializeHandDetection();
-            }, 500);
+            console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
+            // Ensure container is visible and video has real dimensions
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+                setTimeout(() => {
+                    initializeHandDetection();
+                }, 500);
+            }
         };
     } catch (error) {
         if (error.name === 'NotAllowedError') {
