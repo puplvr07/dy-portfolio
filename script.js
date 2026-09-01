@@ -182,44 +182,56 @@ function onHandResults(results) {
     }
 }
 
-// Simple Delaunay triangulation implementation for hand mesh
+// Create triangle strips for each finger to cover the entire hand
 function simpleHandTriangulation(landmarks) {
-    // Create triangles connecting all fingers through their joints
     const triangles = [];
-    
-    // Convert landmarks to 2D array for easier access
     const points = landmarks.map(l => [l.x * canvas.width, l.y * canvas.height]);
     
-    // Define triangle faces connecting the palm to all fingers
-    // Palm connections (wrist and finger bases)
-    const palmTriangles = [
-        [0, 1, 5],   // wrist to thumb-index
-        [0, 5, 9],   // wrist to index-middle
-        [0, 9, 13],  // wrist to middle-ring
-        [0, 13, 17], // wrist to ring-pinky
-        [0, 17, 1]   // wrist back to thumb
-    ];
+    // Helper function to create vertical triangle strips for a finger
+    function createFingerStrip(fingerIndices) {
+        for (let i = 0; i < fingerIndices.length - 1; i++) {
+            const curr = fingerIndices[i];
+            const next = fingerIndices[i + 1];
+            // Create two triangles that form a strip
+            triangles.push([curr, next, curr]);
+            if (i < fingerIndices.length - 2) {
+                triangles.push([next, fingerIndices[i + 2], next]);
+            }
+        }
+    }
     
-    // Finger joint triangles for each finger
-    // Thumb
-    triangles.push([1, 2, 3], [1, 3, 4], [2, 3, 4]);
-    // Index
-    triangles.push([5, 6, 7], [5, 7, 8], [6, 7, 8]);
-    // Middle
-    triangles.push([9, 10, 11], [9, 11, 12], [10, 11, 12]);
-    // Ring
-    triangles.push([13, 14, 15], [13, 15, 16], [14, 15, 16]);
-    // Pinky
-    triangles.push([17, 18, 19], [17, 19, 20], [18, 19, 20]);
+    // Thumb strip: landmarks 0→1→2→3→4
+    for (let i = 0; i < 4; i++) {
+        triangles.push([i, i + 1, 0]);
+    }
     
-    // Add palm triangles
-    triangles.push(...palmTriangles);
+    // Index finger strip: landmarks 5→6→7→8
+    for (let i = 5; i < 8; i++) {
+        triangles.push([0, i, i + 1]);
+    }
     
-    // Inter-finger web triangles
-    triangles.push([5, 8, 9], [8, 9, 10]); // index-middle
-    triangles.push([9, 12, 13], [12, 13, 14]); // middle-ring
-    triangles.push([13, 16, 17], [16, 17, 18]); // ring-pinky
+    // Middle finger strip: landmarks 9→10→11→12
+    for (let i = 9; i < 12; i++) {
+        triangles.push([0, i, i + 1]);
+    }
     
+    // Ring finger strip: landmarks 13→14→15→16
+    for (let i = 13; i < 16; i++) {
+        triangles.push([0, i, i + 1]);
+    }
+    
+    // Pinky finger strip: landmarks 17→18→19→20
+    for (let i = 17; i < 20; i++) {
+        triangles.push([0, i, i + 1]);
+    }
+    
+    // Connect adjacent finger bases to create smooth coverage
+    triangles.push([5, 9, 0]);  // index-middle bridge
+    triangles.push([9, 13, 0]); // middle-ring bridge
+    triangles.push([13, 17, 0]); // ring-pinky bridge
+    triangles.push([17, 1, 0]); // pinky-thumb bridge
+    
+    // Convert indices to actual points
     return triangles.map(tri => tri.map(idx => points[idx]));
 }
 
@@ -260,18 +272,6 @@ function drawImageThroughFingerShape(landmarks) {
         canvasCtx.drawImage(certImage, imgX, imgY, scaledWidth, scaledHeight);
         
         canvasCtx.restore();
-    }
-    
-    // Draw hand outline for visual reference
-    canvasCtx.strokeStyle = '#c0c0c0';
-    canvasCtx.lineWidth = 2;
-    for (let triangle of triangles) {
-        canvasCtx.beginPath();
-        canvasCtx.moveTo(triangle[0][0], triangle[0][1]);
-        canvasCtx.lineTo(triangle[1][0], triangle[1][1]);
-        canvasCtx.lineTo(triangle[2][0], triangle[2][1]);
-        canvasCtx.closePath();
-        canvasCtx.stroke();
     }
 }
 
