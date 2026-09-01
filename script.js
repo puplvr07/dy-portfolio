@@ -191,14 +191,18 @@ function drawImageThroughFingerShape(landmarks) {
     canvasCtx.closePath();
     canvasCtx.clip();
     
-    // Draw cert image within the clipped region
-    const scale = Math.max(canvas.width, canvas.height) / 300;
+    // Draw full image scaled to fit the entire canvas
+    // This way, the visible portion through the polygon is a slice of the full image
+    const scale = Math.max(canvas.width / certImage.width, canvas.height / certImage.height);
+    const scaledWidth = certImage.width * scale;
+    const scaledHeight = certImage.height * scale;
+    
     canvasCtx.drawImage(
         certImage,
-        canvas.width / 2 - (certImage.width * scale) / 2,
-        canvas.height / 2 - (certImage.height * scale) / 2,
-        certImage.width * scale,
-        certImage.height * scale
+        (canvas.width - scaledWidth) / 2,
+        (canvas.height - scaledHeight) / 2,
+        scaledWidth,
+        scaledHeight
     );
     
     // Draw the shape outline
