@@ -196,10 +196,20 @@ function drawImageThroughFingerShape(landmarks) {
     canvasCtx.closePath();
     canvasCtx.clip();
     
-    // Draw full image with correct aspect ratio (not stretched)
-    const scale = Math.min(canvas.width / certImage.width, canvas.height / certImage.height);
-    const scaledWidth = certImage.width * scale;
-    const scaledHeight = certImage.height * scale;
+    // Draw full image scaled to fill the canvas while maintaining aspect ratio
+    const imageAspect = certImage.width / certImage.height;
+    const canvasAspect = canvas.width / canvas.height;
+    
+    let scaledWidth, scaledHeight;
+    if (imageAspect > canvasAspect) {
+        // Image is wider, scale to canvas height
+        scaledHeight = canvas.height;
+        scaledWidth = scaledHeight * imageAspect;
+    } else {
+        // Image is taller, scale to canvas width
+        scaledWidth = canvas.width;
+        scaledHeight = scaledWidth / imageAspect;
+    }
     
     canvasCtx.drawImage(
         certImage,
