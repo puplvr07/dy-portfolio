@@ -172,40 +172,49 @@ function onHandResults(results) {
 function drawImageThroughFingerShape(landmarks) {
     if (!certImage || !certImage.src) return;
     
-    // Trace around the entire hand perimeter in proper order
-    // This creates a continuous outline from wrist around all fingers and back
-    const handOutline = [
-        // Start at wrist and go up thumb side
-        { x: landmarks[0].x * canvas.width, y: landmarks[0].y * canvas.height },   // wrist
-        { x: landmarks[1].x * canvas.width, y: landmarks[1].y * canvas.height },   // thumb CMC
-        { x: landmarks[2].x * canvas.width, y: landmarks[2].y * canvas.height },   // thumb MCP
-        { x: landmarks[3].x * canvas.width, y: landmarks[3].y * canvas.height },   // thumb IP
-        { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height },   // thumb tip
-        // Index finger
-        { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },   // index tip
-        // Middle finger
-        { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height }, // middle tip
-        // Ring finger
-        { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height }, // ring tip
-        // Pinky finger
-        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }, // pinky tip
-        // Come back down pinky side
-        { x: landmarks[19].x * canvas.width, y: landmarks[19].y * canvas.height }, // pinky IP
-        { x: landmarks[18].x * canvas.width, y: landmarks[18].y * canvas.height }, // pinky PIP
-        { x: landmarks[17].x * canvas.width, y: landmarks[17].y * canvas.height }, // pinky MCP
-        // Ring finger back
-        { x: landmarks[15].x * canvas.width, y: landmarks[15].y * canvas.height }, // ring IP
-        { x: landmarks[14].x * canvas.width, y: landmarks[14].y * canvas.height }, // ring PIP
-        { x: landmarks[13].x * canvas.width, y: landmarks[13].y * canvas.height }, // ring MCP
-        // Middle finger back
-        { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height }, // middle IP
-        { x: landmarks[10].x * canvas.width, y: landmarks[10].y * canvas.height }, // middle PIP
-        { x: landmarks[9].x * canvas.width, y: landmarks[9].y * canvas.height },   // middle MCP
-        // Index finger back
-        { x: landmarks[7].x * canvas.width, y: landmarks[7].y * canvas.height },   // index IP
-        { x: landmarks[6].x * canvas.width, y: landmarks[6].y * canvas.height },   // index PIP
-        { x: landmarks[5].x * canvas.width, y: landmarks[5].y * canvas.height }    // index MCP
-    ];
+    // Create hand outline with filled gaps between fingers
+    const handOutline = [];
+    
+    // Add all landmarks in order
+    for (let i = 0; i < landmarks.length; i++) {
+        handOutline.push({
+            x: landmarks[i].x * canvas.width,
+            y: landmarks[i].y * canvas.height
+        });
+    }
+    
+    // Add interpolated points between finger tips to fill gaps
+    // Between thumb and index (landmarks 4 and 8)
+    for (let t = 0.1; t < 1; t += 0.1) {
+        handOutline.push({
+            x: landmarks[4].x * canvas.width * (1 - t) + landmarks[5].x * canvas.width * t,
+            y: landmarks[4].y * canvas.height * (1 - t) + landmarks[5].y * canvas.height * t
+        });
+    }
+    
+    // Between index and middle (landmarks 8 and 12)
+    for (let t = 0.1; t < 1; t += 0.1) {
+        handOutline.push({
+            x: landmarks[8].x * canvas.width * (1 - t) + landmarks[9].x * canvas.width * t,
+            y: landmarks[8].y * canvas.height * (1 - t) + landmarks[9].y * canvas.height * t
+        });
+    }
+    
+    // Between middle and ring (landmarks 12 and 16)
+    for (let t = 0.1; t < 1; t += 0.1) {
+        handOutline.push({
+            x: landmarks[12].x * canvas.width * (1 - t) + landmarks[13].x * canvas.width * t,
+            y: landmarks[12].y * canvas.height * (1 - t) + landmarks[13].y * canvas.height * t
+        });
+    }
+    
+    // Between ring and pinky (landmarks 16 and 20)
+    for (let t = 0.1; t < 1; t += 0.1) {
+        handOutline.push({
+            x: landmarks[16].x * canvas.width * (1 - t) + landmarks[17].x * canvas.width * t,
+            y: landmarks[16].y * canvas.height * (1 - t) + landmarks[17].y * canvas.height * t
+        });
+    }
     
     // Create clipping path from complete hand outline
     canvasCtx.save();
