@@ -187,51 +187,41 @@ function simpleHandTriangulation(landmarks) {
     const triangles = [];
     const points = landmarks.map(l => [l.x * canvas.width, l.y * canvas.height]);
     
-    // Helper function to create vertical triangle strips for a finger
-    function createFingerStrip(fingerIndices) {
-        for (let i = 0; i < fingerIndices.length - 1; i++) {
-            const curr = fingerIndices[i];
-            const next = fingerIndices[i + 1];
-            // Create two triangles that form a strip
-            triangles.push([curr, next, curr]);
-            if (i < fingerIndices.length - 2) {
-                triangles.push([next, fingerIndices[i + 2], next]);
-            }
-        }
-    }
+    // --- NEW: fill the palm + gaps between fingers ---
+    // Fan out from the wrist to each pair of adjacent fingertips/knuckles.
+    // This covers the webbing between fingers, not just the finger strips.
+    triangles.push([0, 1, 4]);    // thumb-side palm
+    triangles.push([0, 4, 5]);    // thumb-to-index web
+    triangles.push([0, 5, 8]);    // index base to tip
+    triangles.push([0, 5, 9]);    // index-to-middle web (palm)
+    triangles.push([0, 9, 12]);   // middle base to tip
+    triangles.push([0, 9, 13]);   // middle-to-ring web (palm)
+    triangles.push([0, 13, 16]);  // ring base to tip
+    triangles.push([0, 13, 17]);  // ring-to-pinky web (palm)
+    triangles.push([0, 17, 20]);  // pinky base to tip
     
-    // Thumb strip: landmarks 0→1→2→3→4
+    // --- existing per-finger strips (kept for cleaner tip detail) ---
     for (let i = 0; i < 4; i++) {
         triangles.push([i, i + 1, 0]);
     }
-    
-    // Index finger strip: landmarks 5→6→7→8
     for (let i = 5; i < 8; i++) {
         triangles.push([0, i, i + 1]);
     }
-    
-    // Middle finger strip: landmarks 9→10→11→12
     for (let i = 9; i < 12; i++) {
         triangles.push([0, i, i + 1]);
     }
-    
-    // Ring finger strip: landmarks 13→14→15→16
     for (let i = 13; i < 16; i++) {
         triangles.push([0, i, i + 1]);
     }
-    
-    // Pinky finger strip: landmarks 17→18→19→20
     for (let i = 17; i < 20; i++) {
         triangles.push([0, i, i + 1]);
     }
     
-    // Connect adjacent finger bases to create smooth coverage
-    triangles.push([5, 9, 0]);  // index-middle bridge
-    triangles.push([9, 13, 0]); // middle-ring bridge
-    triangles.push([13, 17, 0]); // ring-pinky bridge
-    triangles.push([17, 1, 0]); // pinky-thumb bridge
+    triangles.push([5, 9, 0]);
+    triangles.push([9, 13, 0]);
+    triangles.push([13, 17, 0]);
+    triangles.push([17, 1, 0]);
     
-    // Convert indices to actual points
     return triangles.map(tri => tri.map(idx => points[idx]));
 }
 
