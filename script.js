@@ -26,7 +26,7 @@ function loadMediaPipe() {
     return Promise.all([
         new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4/camera_utils.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
             script.onload = () => {
                 console.log('camera_utils loaded');
                 resolve();
@@ -39,7 +39,7 @@ function loadMediaPipe() {
         }),
         new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.4/drawing_utils.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js';
             script.onload = () => {
                 console.log('drawing_utils loaded');
                 resolve();
@@ -52,7 +52,7 @@ function loadMediaPipe() {
         }),
         new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
             script.onload = () => {
                 console.log('hands.js loaded');
                 resolve();
@@ -112,7 +112,7 @@ async function initializeHandDetection() {
         
         hands = new window.Hands({
             locateFile: (file) => {
-                const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+                const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
                 console.log('Loading MediaPipe resource:', url);
                 return url;
             }
