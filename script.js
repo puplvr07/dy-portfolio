@@ -12,7 +12,7 @@ function loadCertImage() {
     return new Promise((resolve) => {
         certImage = new Image();
         certImage.crossOrigin = 'anonymous';
-        certImage.src = 'assets/cert1.jpg';
+        certImage.src = 'assets/Me.jpg';
         certImage.onload = resolve;
         certImage.onerror = () => {
             console.warn('Could not load cert1.jpg, will use fallback');
