@@ -121,8 +121,8 @@ async function initializeHandDetection() {
         hands.setOptions({
             maxNumHands: 2,
             modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            minDetectionConfidence: 0.8,
+            minTrackingConfidence: 0.8
         });
         
         hands.onResults(onHandResults);
@@ -181,6 +181,17 @@ function drawImageThroughFingerShape(landmarks) {
         { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }  // pinky
     ];
     
+    // Calculate bounding box of fingertips
+    let minX = Math.min(...fingertips.map(f => f.x));
+    let maxX = Math.max(...fingertips.map(f => f.x));
+    let minY = Math.min(...fingertips.map(f => f.y));
+    let maxY = Math.max(...fingertips.map(f => f.y));
+    
+    const boundingWidth = maxX - minX;
+    const boundingHeight = maxY - minY;
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    
     // Create clipping path from fingertips
     canvasCtx.save();
     canvasCtx.beginPath();
@@ -191,19 +202,23 @@ function drawImageThroughFingerShape(landmarks) {
     canvasCtx.closePath();
     canvasCtx.clip();
     
-    // Draw cert image within the clipped region
-    const scale = Math.max(canvas.width, canvas.height) / 300;
+    // Scale image to fit within fingertip polygon with padding
+    const scale = Math.min(boundingWidth, boundingHeight) / Math.max(certImage.width, certImage.height);
+    const scaledWidth = certImage.width * scale * 1.1; // 1.1 adds 10% padding to fill space
+    const scaledHeight = certImage.height * scale * 1.1;
+    
+    // Draw cert image centered in the clipped region
     canvasCtx.drawImage(
         certImage,
-        canvas.width / 2 - (certImage.width * scale) / 2,
-        canvas.height / 2 - (certImage.height * scale) / 2,
-        certImage.width * scale,
-        certImage.height * scale
+        centerX - scaledWidth / 2,
+        centerY - scaledHeight / 2,
+        scaledWidth,
+        scaledHeight
     );
     
-    // Draw the shape outline
+    // Draw the shape outline - thicker and more visible
     canvasCtx.strokeStyle = '#c0c0c0';
-    canvasCtx.lineWidth = 2;
+    canvasCtx.lineWidth = 3;
     canvasCtx.stroke();
     
     canvasCtx.restore();
@@ -222,7 +237,7 @@ function drawHand(landmarks) {
     
     canvasCtx.fillStyle = '#b0b0b0';
     canvasCtx.strokeStyle = '#808080';
-    canvasCtx.lineWidth = 2;
+    canvasCtx.lineWidth = 3;
     
     // Draw connections
     for (let connection of connections) {
@@ -235,10 +250,10 @@ function drawHand(landmarks) {
         canvasCtx.stroke();
     }
     
-    // Draw landmarks (finger points)
+    // Draw landmarks (finger points) - larger
     for (let landmark of landmarks) {
         canvasCtx.beginPath();
-        canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, 2 * Math.PI);
+        canvasCtx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 6, 0, 2 * Math.PI);
         canvasCtx.fill();
     }
 }
