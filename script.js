@@ -172,34 +172,39 @@ function onHandResults(results) {
 function drawImageThroughFingerShape(landmarks) {
     if (!certImage || !certImage.src) return;
     
-    // Create complete hand outline by tracing around the entire hand
+    // Trace around the entire hand perimeter in proper order
+    // This creates a continuous outline from wrist around all fingers and back
     const handOutline = [
-        // Wrist and thumb
+        // Start at wrist and go up thumb side
         { x: landmarks[0].x * canvas.width, y: landmarks[0].y * canvas.height },   // wrist
-        { x: landmarks[1].x * canvas.width, y: landmarks[1].y * canvas.height },   // thumb base
-        { x: landmarks[2].x * canvas.width, y: landmarks[2].y * canvas.height },   // thumb mid
-        { x: landmarks[3].x * canvas.width, y: landmarks[3].y * canvas.height },   // thumb upper
+        { x: landmarks[1].x * canvas.width, y: landmarks[1].y * canvas.height },   // thumb CMC
+        { x: landmarks[2].x * canvas.width, y: landmarks[2].y * canvas.height },   // thumb MCP
+        { x: landmarks[3].x * canvas.width, y: landmarks[3].y * canvas.height },   // thumb IP
         { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height },   // thumb tip
         // Index finger
-        { x: landmarks[5].x * canvas.width, y: landmarks[5].y * canvas.height },   // index base
-        { x: landmarks[6].x * canvas.width, y: landmarks[6].y * canvas.height },   // index lower
-        { x: landmarks[7].x * canvas.width, y: landmarks[7].y * canvas.height },   // index mid
         { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },   // index tip
         // Middle finger
-        { x: landmarks[9].x * canvas.width, y: landmarks[9].y * canvas.height },   // middle base
-        { x: landmarks[10].x * canvas.width, y: landmarks[10].y * canvas.height }, // middle lower
-        { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height }, // middle mid
         { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height }, // middle tip
         // Ring finger
-        { x: landmarks[13].x * canvas.width, y: landmarks[13].y * canvas.height }, // ring base
-        { x: landmarks[14].x * canvas.width, y: landmarks[14].y * canvas.height }, // ring lower
-        { x: landmarks[15].x * canvas.width, y: landmarks[15].y * canvas.height }, // ring mid
         { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height }, // ring tip
         // Pinky finger
-        { x: landmarks[17].x * canvas.width, y: landmarks[17].y * canvas.height }, // pinky base
-        { x: landmarks[18].x * canvas.width, y: landmarks[18].y * canvas.height }, // pinky lower
-        { x: landmarks[19].x * canvas.width, y: landmarks[19].y * canvas.height }, // pinky mid
-        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }  // pinky tip
+        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }, // pinky tip
+        // Come back down pinky side
+        { x: landmarks[19].x * canvas.width, y: landmarks[19].y * canvas.height }, // pinky IP
+        { x: landmarks[18].x * canvas.width, y: landmarks[18].y * canvas.height }, // pinky PIP
+        { x: landmarks[17].x * canvas.width, y: landmarks[17].y * canvas.height }, // pinky MCP
+        // Ring finger back
+        { x: landmarks[15].x * canvas.width, y: landmarks[15].y * canvas.height }, // ring IP
+        { x: landmarks[14].x * canvas.width, y: landmarks[14].y * canvas.height }, // ring PIP
+        { x: landmarks[13].x * canvas.width, y: landmarks[13].y * canvas.height }, // ring MCP
+        // Middle finger back
+        { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height }, // middle IP
+        { x: landmarks[10].x * canvas.width, y: landmarks[10].y * canvas.height }, // middle PIP
+        { x: landmarks[9].x * canvas.width, y: landmarks[9].y * canvas.height },   // middle MCP
+        // Index finger back
+        { x: landmarks[7].x * canvas.width, y: landmarks[7].y * canvas.height },   // index IP
+        { x: landmarks[6].x * canvas.width, y: landmarks[6].y * canvas.height },   // index PIP
+        { x: landmarks[5].x * canvas.width, y: landmarks[5].y * canvas.height }    // index MCP
     ];
     
     // Create clipping path from complete hand outline
