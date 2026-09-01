@@ -172,28 +172,32 @@ function onHandResults(results) {
 function drawImageThroughFingerShape(landmarks) {
     if (!certImage || !certImage.src) return;
     
-    // Get fingertip positions (4, 8, 12, 16, 20)
-    const fingertips = [
-        { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height },   // thumb
-        { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },   // index
-        { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height }, // middle
-        { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height }, // ring
-        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }  // pinky
+    // Get hand outline including palm (wrist + fingers)
+    const handOutline = [
+        { x: landmarks[0].x * canvas.width, y: landmarks[0].y * canvas.height },   // wrist
+        { x: landmarks[5].x * canvas.width, y: landmarks[5].y * canvas.height },   // index MCP
+        { x: landmarks[9].x * canvas.width, y: landmarks[9].y * canvas.height },   // middle MCP
+        { x: landmarks[13].x * canvas.width, y: landmarks[13].y * canvas.height }, // ring MCP
+        { x: landmarks[17].x * canvas.width, y: landmarks[17].y * canvas.height }, // pinky MCP
+        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height }, // pinky tip
+        { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height }, // ring tip
+        { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height }, // middle tip
+        { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },   // index tip
+        { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height }    // thumb tip
     ];
     
-    // Create clipping path from fingertips
+    // Create clipping path from hand outline
     canvasCtx.save();
     canvasCtx.beginPath();
-    canvasCtx.moveTo(fingertips[0].x, fingertips[0].y);
-    for (let i = 1; i < fingertips.length; i++) {
-        canvasCtx.lineTo(fingertips[i].x, fingertips[i].y);
+    canvasCtx.moveTo(handOutline[0].x, handOutline[0].y);
+    for (let i = 1; i < handOutline.length; i++) {
+        canvasCtx.lineTo(handOutline[i].x, handOutline[i].y);
     }
     canvasCtx.closePath();
     canvasCtx.clip();
     
-    // Draw full image scaled to fit the entire canvas
-    // This way, the visible portion through the polygon is a slice of the full image
-    const scale = Math.max(canvas.width / certImage.width, canvas.height / certImage.height);
+    // Draw full image with correct aspect ratio (not stretched)
+    const scale = Math.min(canvas.width / certImage.width, canvas.height / certImage.height);
     const scaledWidth = certImage.width * scale;
     const scaledHeight = certImage.height * scale;
     
