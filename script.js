@@ -62,6 +62,20 @@ function loadMediaPipe() {
                 reject(new Error('Failed to load hands.js - check browser console for CORS/CSP errors'));
             };
             document.head.appendChild(script);
+        }),
+        new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/delaunator@5.3.0/+esm';
+            script.type = 'module';
+            script.onload = () => {
+                console.log('delaunator loaded');
+                resolve();
+            };
+            script.onerror = () => {
+                console.warn('Delaunator failed to load, will use fallback triangulation');
+                resolve();
+            };
+            document.head.appendChild(script);
         })
     ]);
 }
@@ -168,86 +182,97 @@ function onHandResults(results) {
     }
 }
 
-// Draw cert image clipped to finger shape
+// Simple Delaunay triangulation implementation for hand mesh
+function simpleHandTriangulation(landmarks) {
+    // Create triangles connecting all fingers through their joints
+    const triangles = [];
+    
+    // Convert landmarks to 2D array for easier access
+    const points = landmarks.map(l => [l.x * canvas.width, l.y * canvas.height]);
+    
+    // Define triangle faces connecting the palm to all fingers
+    // Palm connections (wrist and finger bases)
+    const palmTriangles = [
+        [0, 1, 5],   // wrist to thumb-index
+        [0, 5, 9],   // wrist to index-middle
+        [0, 9, 13],  // wrist to middle-ring
+        [0, 13, 17], // wrist to ring-pinky
+        [0, 17, 1]   // wrist back to thumb
+    ];
+    
+    // Finger joint triangles for each finger
+    // Thumb
+    triangles.push([1, 2, 3], [1, 3, 4], [2, 3, 4]);
+    // Index
+    triangles.push([5, 6, 7], [5, 7, 8], [6, 7, 8]);
+    // Middle
+    triangles.push([9, 10, 11], [9, 11, 12], [10, 11, 12]);
+    // Ring
+    triangles.push([13, 14, 15], [13, 15, 16], [14, 15, 16]);
+    // Pinky
+    triangles.push([17, 18, 19], [17, 19, 20], [18, 19, 20]);
+    
+    // Add palm triangles
+    triangles.push(...palmTriangles);
+    
+    // Inter-finger web triangles
+    triangles.push([5, 8, 9], [8, 9, 10]); // index-middle
+    triangles.push([9, 12, 13], [12, 13, 14]); // middle-ring
+    triangles.push([13, 16, 17], [16, 17, 18]); // ring-pinky
+    
+    return triangles.map(tri => tri.map(idx => points[idx]));
+}
+
+// Draw cert image clipped to finger shape using triangulation
 function drawImageThroughFingerShape(landmarks) {
     if (!certImage || !certImage.src) return;
     
-    // Create a proper hand outline that includes finger gaps
-    // Trace from wrist around all fingers in a continuous path
-    const handOutline = [
-        // Wrist and palm area
-        { x: landmarks[0].x * canvas.width, y: landmarks[0].y * canvas.height },
-        
-        // Thumb outline
-        { x: landmarks[1].x * canvas.width, y: landmarks[1].y * canvas.height },
-        { x: landmarks[2].x * canvas.width, y: landmarks[2].y * canvas.height },
-        { x: landmarks[3].x * canvas.width, y: landmarks[3].y * canvas.height },
-        { x: landmarks[4].x * canvas.width, y: landmarks[4].y * canvas.height },
-        
-        // Index outline
-        { x: landmarks[8].x * canvas.width, y: landmarks[8].y * canvas.height },
-        { x: landmarks[7].x * canvas.width, y: landmarks[7].y * canvas.height },
-        { x: landmarks[6].x * canvas.width, y: landmarks[6].y * canvas.height },
-        { x: landmarks[5].x * canvas.width, y: landmarks[5].y * canvas.height },
-        
-        // Middle outline
-        { x: landmarks[12].x * canvas.width, y: landmarks[12].y * canvas.height },
-        { x: landmarks[11].x * canvas.width, y: landmarks[11].y * canvas.height },
-        { x: landmarks[10].x * canvas.width, y: landmarks[10].y * canvas.height },
-        { x: landmarks[9].x * canvas.width, y: landmarks[9].y * canvas.height },
-        
-        // Ring outline
-        { x: landmarks[16].x * canvas.width, y: landmarks[16].y * canvas.height },
-        { x: landmarks[15].x * canvas.width, y: landmarks[15].y * canvas.height },
-        { x: landmarks[14].x * canvas.width, y: landmarks[14].y * canvas.height },
-        { x: landmarks[13].x * canvas.width, y: landmarks[13].y * canvas.height },
-        
-        // Pinky outline
-        { x: landmarks[20].x * canvas.width, y: landmarks[20].y * canvas.height },
-        { x: landmarks[19].x * canvas.width, y: landmarks[19].y * canvas.height },
-        { x: landmarks[18].x * canvas.width, y: landmarks[18].y * canvas.height },
-        { x: landmarks[17].x * canvas.width, y: landmarks[17].y * canvas.height }
-    ];
+    // Get triangles for hand mesh
+    const triangles = simpleHandTriangulation(landmarks);
     
-    // Create clipping path from hand outline
-    canvasCtx.save();
-    canvasCtx.beginPath();
-    canvasCtx.moveTo(handOutline[0].x, handOutline[0].y);
-    for (let i = 1; i < handOutline.length; i++) {
-        canvasCtx.lineTo(handOutline[i].x, handOutline[i].y);
-    }
-    canvasCtx.closePath();
-    canvasCtx.clip();
-    
-    // Draw full image scaled to fill the canvas while maintaining aspect ratio
+    // Draw image through each triangle
     const imageAspect = certImage.width / certImage.height;
     const canvasAspect = canvas.width / canvas.height;
     
     let scaledWidth, scaledHeight;
     if (imageAspect > canvasAspect) {
-        // Image is wider, scale to canvas height
         scaledHeight = canvas.height;
         scaledWidth = scaledHeight * imageAspect;
     } else {
-        // Image is taller, scale to canvas width
         scaledWidth = canvas.width;
         scaledHeight = scaledWidth / imageAspect;
     }
     
-    canvasCtx.drawImage(
-        certImage,
-        (canvas.width - scaledWidth) / 2,
-        (canvas.height - scaledHeight) / 2,
-        scaledWidth,
-        scaledHeight
-    );
+    const imgX = (canvas.width - scaledWidth) / 2;
+    const imgY = (canvas.height - scaledHeight) / 2;
     
-    // Draw the shape outline
+    // Draw each triangle
+    for (let triangle of triangles) {
+        canvasCtx.save();
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(triangle[0][0], triangle[0][1]);
+        canvasCtx.lineTo(triangle[1][0], triangle[1][1]);
+        canvasCtx.lineTo(triangle[2][0], triangle[2][1]);
+        canvasCtx.closePath();
+        canvasCtx.clip();
+        
+        // Draw the full image for each triangle (it will only show the clipped portion)
+        canvasCtx.drawImage(certImage, imgX, imgY, scaledWidth, scaledHeight);
+        
+        canvasCtx.restore();
+    }
+    
+    // Draw hand outline for visual reference
     canvasCtx.strokeStyle = '#c0c0c0';
     canvasCtx.lineWidth = 2;
-    canvasCtx.stroke();
-    
-    canvasCtx.restore();
+    for (let triangle of triangles) {
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(triangle[0][0], triangle[0][1]);
+        canvasCtx.lineTo(triangle[1][0], triangle[1][1]);
+        canvasCtx.lineTo(triangle[2][0], triangle[2][1]);
+        canvasCtx.closePath();
+        canvasCtx.stroke();
+    }
 }
 
 // Draw hand skeleton
