@@ -187,40 +187,42 @@ function simpleHandTriangulation(landmarks) {
     const triangles = [];
     const points = landmarks.map(l => [l.x * canvas.width, l.y * canvas.height]);
     
-    // --- NEW: fill the palm + gaps between fingers ---
-    // Fan out from the wrist to each pair of adjacent fingertips/knuckles.
-    // This covers the webbing between fingers, not just the finger strips.
-    triangles.push([0, 1, 4]);    // thumb-side palm
-    triangles.push([0, 4, 5]);    // thumb-to-index web
-    triangles.push([0, 5, 8]);    // index base to tip
-    triangles.push([0, 5, 9]);    // index-to-middle web (palm)
-    triangles.push([0, 9, 12]);   // middle base to tip
-    triangles.push([0, 9, 13]);   // middle-to-ring web (palm)
-    triangles.push([0, 13, 16]);  // ring base to tip
-    triangles.push([0, 13, 17]);  // ring-to-pinky web (palm)
-    triangles.push([0, 17, 20]);  // pinky base to tip
-    
-    // --- existing per-finger strips (kept for cleaner tip detail) ---
-    for (let i = 0; i < 4; i++) {
-        triangles.push([i, i + 1, 0]);
-    }
-    for (let i = 5; i < 8; i++) {
-        triangles.push([0, i, i + 1]);
-    }
-    for (let i = 9; i < 12; i++) {
-        triangles.push([0, i, i + 1]);
-    }
-    for (let i = 13; i < 16; i++) {
-        triangles.push([0, i, i + 1]);
-    }
-    for (let i = 17; i < 20; i++) {
-        triangles.push([0, i, i + 1]);
+    // Connects two adjacent fingers along their full length (base -> tip)
+    // fingerA/fingerB are arrays of 4 landmark indices, ordered base -> tip
+    function createFingerWebStrip(fingerA, fingerB) {
+        const strip = [];
+        for (let i = 0; i < fingerA.length - 1; i++) {
+            strip.push([fingerA[i], fingerB[i], fingerA[i + 1]]);
+            strip.push([fingerB[i], fingerB[i + 1], fingerA[i + 1]]);
+        }
+        return strip;
     }
     
-    triangles.push([5, 9, 0]);
-    triangles.push([9, 13, 0]);
-    triangles.push([13, 17, 0]);
-    triangles.push([17, 1, 0]);
+    const thumb  = [1, 2, 3, 4];
+    const index  = [5, 6, 7, 8];
+    const middle = [9, 10, 11, 12];
+    const ring   = [13, 14, 15, 16];
+    const pinky  = [17, 18, 19, 20];
+    
+    // --- Web strips: fill the ENTIRE gap between each pair of adjacent fingers ---
+    triangles.push(...createFingerWebStrip(thumb, index));
+    triangles.push(...createFingerWebStrip(index, middle));
+    triangles.push(...createFingerWebStrip(middle, ring));
+    triangles.push(...createFingerWebStrip(ring, pinky));
+    
+    // --- Palm fan (fills area between wrist and finger bases) ---
+    triangles.push([0, 1, 5]);
+    triangles.push([0, 5, 9]);
+    triangles.push([0, 9, 13]);
+    triangles.push([0, 13, 17]);
+    triangles.push([0, 17, 20]);
+    
+    // --- Per-finger strips (kept for clean tip coverage) ---
+    for (let i = 0; i < 4; i++) triangles.push([i, i + 1, 0]);
+    for (let i = 5; i < 8; i++) triangles.push([0, i, i + 1]);
+    for (let i = 9; i < 12; i++) triangles.push([0, i, i + 1]);
+    for (let i = 13; i < 16; i++) triangles.push([0, i, i + 1]);
+    for (let i = 17; i < 20; i++) triangles.push([0, i, i + 1]);
     
     return triangles.map(tri => tri.map(idx => points[idx]));
 }
