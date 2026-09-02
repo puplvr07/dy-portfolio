@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="side-shapes" aria-hidden="true">
+        <span class="side-shape side-shape-left"></span>
+        <span class="side-shape side-shape-right"></span>
+    </div>
     <header>
         <nav>
             <h1>Sean Dy</h1>
@@ -34,8 +38,8 @@
                 <button id="camera-button">Access Camera</button>
                 <div id="camera-feed-container" style="display: none;">
                     <video id="camera-feed" autoplay></video>
-                    <button onclick="capturePhoto()">Capture Photo</button>
-                    <button onclick="closeCameraModal()">Close</button>
+                    <button id="capture-button" type="button">Capture Photo</button>
+                    <button id="close-camera-button" type="button">Close</button>
                 </div>
             </div>
         </section>
@@ -104,10 +108,9 @@
         <section id="links">
             <h2>Links</h2>
             <ul class="links-list">
-                <li><a href="#">LinkedIn</a></li>
-                <li><a href="#">GitHub</a></li>
-                <li><a href="#">Portfolio Website</a></li>
-                <li><a href="#">Email</a></li>
+                <li><a href="https://www.linkedin.com/in/sean-chester-dy-6994b5380/">LinkedIn</a></li>
+                <li><a href="https://github.com/puplvr07">GitHub</a></li>
+                <li><a href="mailto:seanchesterdy@gmail.com">Email</a></li>
             </ul>
         </section>
     </main>

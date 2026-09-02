@@ -340,17 +340,26 @@ async function requestCameraAccess() {
     }
 }
 
-// Capture photo from camera (without the hand canvas overlay)
 function capturePhoto() {
     const video = document.getElementById('camera-feed');
+
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) {
+        alert('The camera is not ready yet. Please try again in a moment.');
+        return;
+    }
+
     const captureCanvas = document.createElement('canvas');
     captureCanvas.width = video.videoWidth;
     captureCanvas.height = video.videoHeight;
     const ctx = captureCanvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
-    
-    // Convert canvas to image and download
+
     captureCanvas.toBlob(blob => {
+        if (!blob) {
+            alert('The photo could not be created. Please try again.');
+            return;
+        }
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -359,7 +368,6 @@ function capturePhoto() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        alert('Photo captured and downloaded!');
     }, 'image/jpeg', 0.95);
 }
 
@@ -388,7 +396,16 @@ function closeCameraModal() {
 // Add click event to camera button when page loads
 document.addEventListener('DOMContentLoaded', function() {
     const cameraButton = document.getElementById('camera-button');
+    const captureButton = document.getElementById('capture-button');
+    const closeCameraButton = document.getElementById('close-camera-button');
+
     if (cameraButton) {
         cameraButton.addEventListener('click', requestCameraAccess);
+    }
+    if (captureButton) {
+        captureButton.addEventListener('click', capturePhoto);
+    }
+    if (closeCameraButton) {
+        closeCameraButton.addEventListener('click', closeCameraModal);
     }
 });

@@ -50,6 +50,46 @@ body::after {
     z-index: -1;
 }
 
+.side-shapes {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.side-shape {
+    position: absolute;
+    top: 42%;
+    width: 190px;
+    height: 190px;
+    border: 1px solid rgba(180, 180, 180, 0.18);
+    transform: rotate(45deg);
+    animation: spinShape 18s linear infinite;
+}
+
+.side-shape::after {
+    content: '';
+    position: absolute;
+    inset: 24px;
+    border: 1px solid rgba(180, 180, 180, 0.12);
+    transform: rotate(45deg);
+}
+
+.side-shape-left {
+    left: -105px;
+}
+
+.side-shape-right {
+    right: -105px;
+    animation-direction: reverse;
+}
+
+@keyframes spinShape {
+    from { transform: rotate(45deg); }
+    to { transform: rotate(405deg); }
+}
+
 @keyframes float {
     0%, 100% { transform: translate(0, 0); }
     50% { transform: translate(30px, -30px); }
@@ -79,7 +119,7 @@ header nav {
 header h1 {
     color: #c0c0c0;
     font-size: 2rem;
-    font-weight: 600;
+    font-weight: 400;
     text-shadow: 0 0 20px rgba(180, 180, 180, 0.2);
     letter-spacing: -0.5px;
 }
@@ -110,6 +150,8 @@ main {
     max-width: 1200px;
     margin: 0 auto;
     padding: 3rem 2rem;
+    position: relative;
+    z-index: 1;
 }
 
 /* Glass Card Effect for Sections */
@@ -171,6 +213,7 @@ section p {
     border-radius: 10px;
     overflow: hidden;
     border: 2px solid rgba(180, 180, 180, 0.3);
+    text-align: center;
 }
 
 video {
@@ -179,6 +222,10 @@ video {
     display: block;
     max-height: 400px;
     object-fit: cover;
+}
+
+#hand-canvas {
+    pointer-events: none;
 }
 
 /* Projects Container */
